@@ -17,8 +17,6 @@
 #include "TreeletReorderBindings.h"
 #include "RayTracingHelper.hlsli"
 
-static const uint FullPartitionMask = NumTreeletSplitPermutations - 1;
-
 static const float CostOfRayBoxIntersection = 1.0;
 
 float ComputeBoxSurfaceArea(AABB aabb)

@@ -135,7 +135,7 @@ void main( uint3 DTid : SV_DispatchThreadID )
             float optimalCost[NumTreeletSplitPermutations];
             uint optimalPartition[NumTreeletSplitPermutations];
 
-            const uint FullPartitionMask = NumTreeletSplitPermutations - 1;
+            // const uint FullPartitionMask = NumTreeletSplitPermutations - 1;
             for (uint treeletBitmask = 1; treeletBitmask < NumTreeletSplitPermutations; treeletBitmask++)
             {
                 AABB aabb;

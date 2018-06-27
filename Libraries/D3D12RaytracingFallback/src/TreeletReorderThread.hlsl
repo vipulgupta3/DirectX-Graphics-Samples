@@ -21,9 +21,6 @@
 
 #define BREAK_POINT hierarchyBuffer[4294967291] = hierarchyBuffer[4294967294];
 
-
-static const uint FullPartitionMask = NumTreeletSplitPermutations - 1;
-
 static const float CostOfRayBoxIntersection = 1.0;
 
 float ComputeBoxSurfaceArea(AABB aabb)

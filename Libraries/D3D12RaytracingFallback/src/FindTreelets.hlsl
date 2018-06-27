@@ -49,7 +49,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
     uint numTriangles = 1;
     bool isLeaf = true;
 
-    while(true)
+    do
     {
         AABB nodeAABB;
         if (isLeaf)
@@ -89,5 +89,5 @@ void main(uint3 DTid : SV_DispatchThreadID)
         nodeIndex = parentNodeIndex;
         numTriangles = numTrianglesFromOtherNode + numTriangles;
         isLeaf = false;
-    }
+    } while (true);
 }
