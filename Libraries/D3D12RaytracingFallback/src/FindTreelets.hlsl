@@ -28,24 +28,34 @@ AABB ComputeLeafAABB(uint triangleIndex)
     }
 }
 
-AABB CombineAABB(AABB aabb0, AABB aabb1)
-{
-    AABB parentAABB;
-    parentAABB.min = min(aabb0.min, aabb1.min);
-    parentAABB.max = max(aabb0.max, aabb1.max);
-    return parentAABB;
-}
-
 [numthreads(THREAD_GROUP_1D_WIDTH, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID)
 {
+
+    const uint NumberOfLeafNodes = Constants.NumberOfElements;
+    const uint NumberOfInternalNodes = GetNumInternalNodes(NumberOfLeafNodes);
+    const uint TotalNumberOfNodes = NumberOfLeafNodes + NumberOfInternalNodes;
+    const uint MaxNumberOfTreelets = NumberOfLeafNodes / FullTreeletSize;
+
+    if (DTid.x == 0) 
+    {
+        BaseTreeletsCountBuffer.Store(0, 0);
+    }
+
+    if (DTid.x < MaxNumberOfTreelets) 
+    {
+        BaseTreeletsIndexBuffer[DTid.x] = TotalNumberOfNodes;
+    }
+
+    if (DTid.x < NumberOfInternalNodes) 
+    {
+        NumTrianglesBuffer.Store(DTid.x * SizeOfUINT32, 0);
+    }
+
     if (DTid.x >= Constants.NumberOfElements) return;
 
-    const uint NumberOfInternalNodes = GetNumInternalNodes(Constants.NumberOfElements);
-    const uint NumberOfAABBs = NumberOfInternalNodes + Constants.NumberOfElements;
-
     // Start from the leaf nodes and go bottom-up
-    uint nodeIndex = NumberOfAABBs - DTid.x - 1;
+    uint nodeIndex = TotalNumberOfNodes - DTid.x - 1;
     uint numTriangles = 1;
     bool isLeaf = true;
 

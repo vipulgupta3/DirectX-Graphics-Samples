@@ -12,7 +12,6 @@
 #include "CompiledShaders/TreeletReorder.h"
 #include "CompiledShaders/ClearBuffer.h"
 #include "CompiledShaders/FindTreelets.h"
-#include "CompiledShaders/TreeletReorderWave.h"
 #include "TreeletReorderBindings.h"
 
 namespace FallbackLayer
@@ -36,7 +35,6 @@ namespace FallbackLayer
         CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pTreeletReorder), &m_pPSO);
         CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pClearBuffer), &m_pClearBufferPSO);
         CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pFindTreelets), &m_pFindTreeletsPSO);
-        CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pTreeletReorderWave), &m_pPSO_OPT_PL);
     }
 
     void TreeletReorder::Optimize(
@@ -99,26 +97,14 @@ namespace FallbackLayer
             UINT numGroupsForElements = DivideAndRoundUp<UINT>(numElements, THREAD_GROUP_1D_WIDTH);
             UINT maxNumTreelets = (UINT) std::max(numElements / constants.MinTrianglesPerTreelet, 1u);
 
-            pCommandList->SetPipelineState(m_pClearBufferPSO);
+            pCommandList->SetPipelineState(m_pFindTreeletsPSO);
             pCommandList->Dispatch(numGroupsForElements, 1, 1);
             pCommandList->ResourceBarrier(1, &uavBarrier);
 
-            if (!bPrioritizeBuild && !bPrioritizeTrace)
-            {
-                pCommandList->SetPipelineState(m_pPSO);
-                pCommandList->Dispatch(numGroupsForElements, 1, 1);
-                pCommandList->ResourceBarrier(1, &uavBarrier);
-            }
-            else
-            {
-                pCommandList->SetPipelineState(m_pFindTreeletsPSO);
-                pCommandList->Dispatch(numGroupsForElements, 1, 1);
-                pCommandList->ResourceBarrier(1, &uavBarrier);
-                
-                pCommandList->SetPipelineState(m_pPSO_OPT_PL);
-                pCommandList->Dispatch(maxNumTreelets, 1, 1);
-                pCommandList->ResourceBarrier(1, &uavBarrier);
-            }
+            pCommandList->SetPipelineState(m_pPSO);
+            pCommandList->Dispatch(maxNumTreelets, 1, 1);
+            pCommandList->ResourceBarrier(1, &uavBarrier);
+
 
             constants.MinTrianglesPerTreelet *= 2;
         }
