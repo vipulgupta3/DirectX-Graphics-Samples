@@ -55,31 +55,9 @@ void RecordClosestBox(uint currentLevel, inout bool leftTest, float leftT, inout
 #endif
 }
 
-void _StackPush(uint level, inout int stackTop, uint value)
-{
-    stacks[level][stackTop++] = value;
-}
-
-uint _StackPop(uint level, inout int stackTop)
-{
-    return stacks[level][--stackTop];
-}
-
 void StackPush(inout int stackTop, uint level, uint value)
 {
     stacks[level][stackTop++] = value;
-}
-
-void StackPush2(inout int stackTop, uint level, bool selector, uint valueA, uint valueB)
-{
-    const uint store0 = selector ? valueA : valueB;
-    const uint store1 = selector ? valueB : valueA;
-    const uint stackIndex0 = (stackTop + 0);
-    const uint stackIndex1 = (stackTop + 1);
-    stacks[level][stackIndex0] = store0;
-    stacks[level][stackIndex1] = store1;
-
-    stackTop += 2;
 }
 
 uint StackPop(inout int stackTop, uint level)
@@ -901,14 +879,18 @@ bool Traverse(
                 }
                 else // if it's a bottom level
                 {
+#define CRASH_COMPILER
+#ifdef CRASH_COMPILER
+                    endSearch = CheckHitOnBottomLevelLeaf(
+                        secondInfo,
+                        currentBVH,
+                        blasContext,
+                        RayContributionToHitGroupIndex,
+                        MultiplierForGeometryContributionToHitGroupIndex
+                    );
+#else
                     endSearch = true;
-                    // endSearch = CheckHitOnBottomLevelLeaf(
-                    //     secondInfo,
-                    //     currentBVH,
-                    //     blasContext,
-                    //     RayContributionToHitGroupIndex,
-                    //     MultiplierForGeometryContributionToHitGroupIndex
-                    // );
+#endif
                 }
             }
             else
