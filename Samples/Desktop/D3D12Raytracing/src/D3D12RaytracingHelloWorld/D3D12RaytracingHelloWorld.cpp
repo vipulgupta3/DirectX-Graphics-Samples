@@ -135,7 +135,27 @@ void D3D12RaytracingHelloWorld::CreateRootSignatures()
         CD3DX12_ROOT_PARAMETER rootParameters[GlobalRootSignatureParams::Count];
         rootParameters[GlobalRootSignatureParams::OutputViewSlot].InitAsDescriptorTable(1, &UAVDescriptor);
         rootParameters[GlobalRootSignatureParams::AccelerationStructureSlot].InitAsShaderResourceView(0);
+        rootParameters[GlobalRootSignatureParams::MyTextureSlot].InitAsShaderResourceView(1);
         CD3DX12_ROOT_SIGNATURE_DESC globalRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters);
+
+        // Add static sampler.
+        D3D12_STATIC_SAMPLER_DESC sampler = {};
+        sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        sampler.MipLODBias = 0;
+        sampler.MaxAnisotropy = 0;
+        sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+        sampler.MinLOD = 0.0f;
+        sampler.MaxLOD = D3D12_FLOAT32_MAX;
+        sampler.ShaderRegister = 0;
+        sampler.RegisterSpace = 0;
+        sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        globalRootSignatureDesc.NumStaticSamplers = 1;
+        globalRootSignatureDesc.pStaticSamplers = &sampler;
+
         SerializeAndCreateRaytracingRootSignature(globalRootSignatureDesc, &m_raytracingGlobalRootSignature);
     }
 
@@ -312,15 +332,39 @@ void D3D12RaytracingHelloWorld::CreateRaytracingOutputResource()
     m_raytracingOutputResourceUAVGpuDescriptor = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_descriptorHeap->GetGPUDescriptorHandleForHeapStart(), m_raytracingOutputResourceUAVDescriptorHeapIndex, m_descriptorSize);
 }
 
+void D3D12RaytracingHelloWorld::CreateResourceTexture()
+{
+    auto device = m_deviceResources->GetD3DDevice();
+    auto backbufferFormat = m_deviceResources->GetBackBufferFormat();
+
+    auto textureDesc = CD3DX12_RESOURCE_DESC::Tex2D(backbufferFormat, m_width, m_height, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_NONE);
+
+    auto defaultHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    ThrowIfFailed(device->CreateCommittedResource(
+        &defaultHeapProperties, D3D12_HEAP_FLAG_NONE, &textureDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&m_myTexture)));
+    NAME_D3D12_OBJECT(m_myTexture);
+
+    D3D12_CPU_DESCRIPTOR_HANDLE textureDescriptorHandle;
+    m_myTextureDescriptorHeapIndex = AllocateDescriptor(&textureDescriptorHandle);
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Format = backbufferFormat;
+    srvDesc.Texture2D.MipLevels = 1;
+
+    device->CreateShaderResourceView(m_myTexture.Get(), &srvDesc, textureDescriptorHandle);
+    m_myTextureGpuDescriptor = CD3DX12_GPU_DESCRIPTOR_HANDLE(m_descriptorHeap->GetGPUDescriptorHandleForHeapStart(), m_myTextureDescriptorHeapIndex, m_descriptorSize);
+}
+
 void D3D12RaytracingHelloWorld::CreateDescriptorHeap()
 {
     auto device = m_deviceResources->GetD3DDevice();
 
     D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
-    // Allocate a heap for 3 descriptors:
+    // Allocate a heap for 4 descriptors:
     // 2 - bottom and top level acceleration structure fallback wrapped pointers
     // 1 - raytracing output texture SRV
-    descriptorHeapDesc.NumDescriptors = 3; 
+    // 1 - Resource texture
+    descriptorHeapDesc.NumDescriptors = 4; 
     descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     descriptorHeapDesc.NodeMask = 0;
@@ -762,6 +806,8 @@ void D3D12RaytracingHelloWorld::CopyRaytracingOutputToBackbuffer()
 void D3D12RaytracingHelloWorld::CreateWindowSizeDependentResources()
 {
     CreateRaytracingOutputResource(); 
+
+    CreateResourceTexture();
 
     // For simplicity, we will rebuild the shader tables.
     BuildShaderTables();

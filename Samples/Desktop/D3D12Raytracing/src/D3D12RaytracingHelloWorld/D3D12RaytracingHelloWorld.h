@@ -19,6 +19,7 @@ namespace GlobalRootSignatureParams {
     enum Value { 
         OutputViewSlot = 0,
         AccelerationStructureSlot,
+        MyTextureSlot,
         Count 
     };
 }
@@ -100,6 +101,11 @@ private:
     ComPtr<ID3D12Resource> m_bottomLevelAccelerationStructure;
     ComPtr<ID3D12Resource> m_topLevelAccelerationStructure;
 
+    // Resource texture;
+    ComPtr<ID3D12Resource> m_myTexture;
+    D3D12_GPU_DESCRIPTOR_HANDLE m_myTextureGpuDescriptor;
+    UINT m_myTextureDescriptorHeapIndex;
+
     // Raytracing output
     ComPtr<ID3D12Resource> m_raytracingOutput;
     D3D12_GPU_DESCRIPTOR_HANDLE m_raytracingOutputResourceUAVGpuDescriptor;
@@ -134,6 +140,7 @@ private:
     void CreateRaytracingPipelineStateObject();
     void CreateDescriptorHeap();
     void CreateRaytracingOutputResource();
+    void CreateResourceTexture();
     void BuildGeometry();
     void BuildAccelerationStructures();
     void BuildShaderTables();
