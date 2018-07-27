@@ -36,6 +36,19 @@ uint2 GetNodeFlags(uint boxIndex)
     return flags;
 }
 
+#if COMBINE_LEAF_NODES
+bool GetIsNodeToCollapseChildren(uint leftChildIndex)
+{
+    if (ShouldPerformUpdate)
+    {
+        //return GetLeftNodeIndex(GetNodeFlags(leftChildIndex));
+        return false;
+    }
+
+    return IsNodeToCollapseChildren(hierarchyBuffer[leftChildIndex].ParentIndex);
+}
+#endif
+
 uint GetLeftChildIndex(uint boxIndex) 
 {
     if (ShouldPerformUpdate)
@@ -103,19 +116,34 @@ void main(uint3 DTid : SV_DispatchThreadID)
         {
             uint leftNodeIndex = GetLeftChildIndex(nodeIndex);
             uint rightNodeIndex = GetRightChildIndex(nodeIndex);
+// TODO: Properly sort the triangle leaf nodes when collapsing
+// For now, do not swap child indices, so left child is always the FirstTriangleID. This is untested though, and should have a unit test written to verify this
+#if !COMBINE_LEAF_NODES
             if (swapChildIndices)
             {
                 uint temp = leftNodeIndex;
                 leftNodeIndex = rightNodeIndex;
                 rightNodeIndex = temp;
             }
+#endif
 
             BoundingBox leftBox = GetBoxFromBuffer(outputBVH, offsetToBoxes, leftNodeIndex);
             BoundingBox rightBox = GetBoxFromBuffer(outputBVH, offsetToBoxes, rightNodeIndex);
 
             boxData = GetBoxFromChildBoxes(leftBox, leftNodeIndex, rightBox, rightNodeIndex, outputFlag);
 
-#if COMBINE_LEAF_NODES_2ND_PART_TBD
+#if COMBINE_LEAF_NODES
+            if (numTriangles <= MaxLeavesPerNode && GetIsNodeToCollapseChildren(leftNodeIndex))
+            {
+                // Collapsing the leaf nodes into this 'parent' node, turning this node into a leaf itself
+                uint2 leftFlags;
+                GetNodeData(leftNodeIndex, leftFlags);
+                outputFlag.x = leftFlags.x;
+                outputFlag.y = numTriangles;
+            }
+#endif
+
+#if 0 // COMBINE_LEAF_NODES_2ND_PART_TBD. elroyc: Probably obsolete now, should be implemented properly in above COMBINE_LEAF_NODES block
             uint2 leftFlags;
             uint4 leftData = GetNodeData(leftNodeIndex, leftFlags);
 

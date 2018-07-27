@@ -65,6 +65,11 @@ uint GetActualParentIndex(uint index)
 #endif
 }
 
+bool IsNodeToCollapseChildren(uint index)
+{
+    return (index & HierarchyNode::IsCollapseChildren);
+}
+
 // Reorganized AABB for faster intersection testing
 struct BoundingBox
 {
