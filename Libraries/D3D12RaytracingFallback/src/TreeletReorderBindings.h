@@ -30,6 +30,7 @@ struct InputConstants
 #define ElementBufferRegister 3
 #define BaseTreeletsCountBufferRegister 4
 #define BaseTreeletsIndexBufferRegister 5
+#define OutputBVHBufferRegister 6
 
 static const uint FullTreeletSize = 7;
 
@@ -44,6 +45,8 @@ globallycoherent RWStructuredBuffer<AABB> AABBBuffer : UAV_REGISTER(AABBBufferRe
 
 globallycoherent RWByteAddressBuffer BaseTreeletsCountBuffer : UAV_REGISTER(BaseTreeletsCountBufferRegister);
 RWStructuredBuffer<uint> BaseTreeletsIndexBuffer : UAV_REGISTER(BaseTreeletsIndexBufferRegister);
+
+RWStructuredBuffer<uint> ASDebugLog : UAV_REGISTER(OutputBVHBufferRegister);
 
 cbuffer TreeletConstants : CONSTANT_REGISTER(ConstantsRegister)
 {

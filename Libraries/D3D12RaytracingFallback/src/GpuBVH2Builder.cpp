@@ -322,6 +322,7 @@ namespace FallbackLayer
                 outputElementBuffer,
                 baseTreeletsCountBuffer,
                 baseTreeletsIndexBuffer,
+                pDesc->DestAccelerationStructureData + GetBottomLevelBVHTotalSize(numElements),
                 pDesc->Inputs.Flags);
 #endif
         }
@@ -449,6 +450,10 @@ namespace FallbackLayer
             pInfo->ResultDataMaxSizeInBytes += numLeaves * sizeof(UINT); // Saved sorted index buffer
             pInfo->ResultDataMaxSizeInBytes += totalNumNodes * sizeof(UINT); // Parent indices for nodes in hierarchy
         }
+
+#if ENABLE_ACCELERATION_STRUCTURE_DEBUG_LOG
+        pInfo->ResultDataMaxSizeInBytes += AccelerationStructureDebugLogLength * sizeof(UINT);
+#endif
 
         pInfo->ScratchDataSizeInBytes = CalculateScratchMemoryUsage(level, numLeaves).TotalSize;
         pInfo->UpdateScratchDataSizeInBytes = 0;

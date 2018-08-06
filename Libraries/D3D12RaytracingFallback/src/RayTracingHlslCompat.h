@@ -17,12 +17,17 @@
 // Set following to 0 to get MiniEngineSample to run on AMD.
 //
 // Enables an unroll in treelet. Fails to compile on AMD.
-#define USE_EXPLICIT_UNROLL_IN_FORMTREELET 1
+#define USE_EXPLICIT_UNROLL_IN_FORMTREELET 0
 
 // Enables treelet BVH optimization. TDRs on AMD.
 #define ENABLE_TREELET_REORDERING 1
 //
 //*************************************************************************
+
+
+// Stick some extra memory onto the end of the acceleration structure to log information for PIX debugging.
+#define ENABLE_ACCELERATION_STRUCTURE_DEBUG_LOG 1
+#define AccelerationStructureDebugLogLength 256
 
 
 #define     TRAVERSAL_MAX_STACK_DEPTH       32
@@ -471,6 +476,15 @@ inline
 uint GetOffsetFromLeafNodesToBottomLevelMetadata(uint numElements)
 {
     return SizeOfAABBNode * numElements;
+}
+
+inline
+uint GetBottomLevelBVHTotalSize(uint numElements)
+{
+    uint offsetToPrimitives = GetOffsetToPrimitives(numElements);
+    uint offsetToPrimitiveMetaData = offsetToPrimitives + GetOffsetFromPrimitivesToPrimitiveMetaData(numElements);
+    uint totalSize = offsetToPrimitiveMetaData + numElements * SizeOfPrimitiveMetaData;
+    return totalSize;
 }
 
 #ifndef HLSL

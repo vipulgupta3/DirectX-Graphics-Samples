@@ -25,6 +25,7 @@ namespace FallbackLayer
             D3D12_GPU_VIRTUAL_ADDRESS inputElementBuffer,
             D3D12_GPU_VIRTUAL_ADDRESS baseTreeletsCountBuffer,
             D3D12_GPU_VIRTUAL_ADDRESS baseTreeletsBuffer,
+            D3D12_GPU_VIRTUAL_ADDRESS outputBVH,
             D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag);
 
         static UINT RequiredSizeForAABBBuffer(UINT numElements);
@@ -43,6 +44,7 @@ namespace FallbackLayer
             InputElementSlot,
             BaseTreeletsCountBufferSlot,
             BaseTreeletsIndexBufferSlot,
+            OutputBVHSlot,
             ConstantsSlot,
             NumParameters
         };

@@ -12,7 +12,10 @@
 #include "CompiledShaders/ClearBuffers.h"
 #include "CompiledShaders/FindTreelets.h"
 #include "CompiledShaders/TreeletReorder.h"
+#include "CompiledShaders/TreeletReorderTest.h"
 #include "TreeletReorderBindings.h"
+
+#define USE_TR_TEST 1
 
 namespace FallbackLayer
 {
@@ -25,6 +28,7 @@ namespace FallbackLayer
         parameters[InputElementSlot].InitAsUnorderedAccessView(ElementBufferRegister);
         parameters[BaseTreeletsCountBufferSlot].InitAsUnorderedAccessView(BaseTreeletsCountBufferRegister);
         parameters[BaseTreeletsIndexBufferSlot].InitAsUnorderedAccessView(BaseTreeletsIndexBufferRegister);
+        parameters[OutputBVHSlot].InitAsUnorderedAccessView(OutputBVHBufferRegister);
         parameters[ConstantsSlot].InitAsConstants(SizeOfInUint32(InputConstants), ConstantsRegister);
 
         auto rootSignatureDesc = CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC(ARRAYSIZE(parameters), parameters);
@@ -32,7 +36,11 @@ namespace FallbackLayer
         
         CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pClearBuffers), &m_pClearBuffersPSO);
         CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pFindTreelets), &m_pFindTreeletsPSO);
+#if USE_TR_TEST
+        CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pTreeletReorderTest), &m_pTreeletReorderPSO);   
+#else
         CreatePSOHelper(pDevice, nodeMask, m_pRootSignature, COMPILED_SHADER(g_pTreeletReorder), &m_pTreeletReorderPSO);
+#endif
     }
 
     void TreeletReorder::Optimize(
@@ -44,6 +52,7 @@ namespace FallbackLayer
         D3D12_GPU_VIRTUAL_ADDRESS inputElementBuffer,
         D3D12_GPU_VIRTUAL_ADDRESS baseTreeletsCountBuffer,
         D3D12_GPU_VIRTUAL_ADDRESS baseTreeletsIndexBuffer,
+        D3D12_GPU_VIRTUAL_ADDRESS outputBVH,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag)
     {
         if (numElements == 0) return;
@@ -59,24 +68,25 @@ namespace FallbackLayer
         pCommandList->SetComputeRootUnorderedAccessView(InputElementSlot, inputElementBuffer);
         pCommandList->SetComputeRootUnorderedAccessView(BaseTreeletsCountBufferSlot, baseTreeletsCountBuffer);
         pCommandList->SetComputeRootUnorderedAccessView(BaseTreeletsIndexBufferSlot, baseTreeletsIndexBuffer);
+        pCommandList->SetComputeRootUnorderedAccessView(OutputBVHSlot, outputBVH);
 
         bool bPrioritizeTrace = buildFlag & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
         bool bPrioritizeBuild = buildFlag & D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
 
-        UINT numOptimizationPasses;
+        UINT numOptimizationPasses = 1;
 
-        if (bPrioritizeBuild)
-        {
-            numOptimizationPasses = 0;
-        }
-        else if (bPrioritizeTrace)
-        {
-            numOptimizationPasses = 3;
-        }
-        else
-        {
-            numOptimizationPasses = 1;
-        }
+        // if (bPrioritizeBuild)
+        // {
+        //     numOptimizationPasses = 0;
+        // }
+        // else if (bPrioritizeTrace)
+        // {
+        //     numOptimizationPasses = 3;
+        // }
+        // else
+        // {
+        //     numOptimizationPasses = 1;
+        // }
 
         for (UINT i = 0; i < numOptimizationPasses; i++)
         {
