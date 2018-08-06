@@ -27,7 +27,7 @@
 
 // Stick some extra memory onto the end of the acceleration structure to log information for PIX debugging.
 #define ENABLE_ACCELERATION_STRUCTURE_DEBUG_LOG 1
-#define AccelerationStructureDebugLogLength 256
+#define AccelerationStructureDebugLogLength 128
 
 
 #define     TRAVERSAL_MAX_STACK_DEPTH       32
